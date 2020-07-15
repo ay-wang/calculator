@@ -12,13 +12,7 @@ const operators ={
 
 // returns result of a <op> b
 let operator = (op, a, b) => {
-    let res = op(a, b);
-    // num digits3
-    let sz = Math.ceil(Math.log10(res));
-    // want to round such that we show max 10 digits
-    let round = 10 - sz;
-    let factor = Math.pow(10, round);
-    return Math.round(factor * res) / factor;
+    return op(a, b);
 }
 
 const states = {
@@ -30,6 +24,7 @@ const states = {
 
 let display_value = 0, operand = 0;
 let decimal = 0;
+let negative = false;
 let display = document.getElementById("calc-disp");
 let curr_operator = "";
 let calc_state = states.OPERANDA;
@@ -39,16 +34,26 @@ let update_display = () => {
     if (calc_state == states.OPERATOR) {
         display.innerText = curr_operator;
     } else {
-        display.innerText = display_value;
+        // num digits
+        if (display_value !== 0) {
+            let sz = Math.ceil(Math.log10(Math.abs(display_value)));
+            // want to round such that we show max 10 digits
+            let round = 10 - sz;
+            let factor = Math.pow(10, round);
+            display.innerText = Math.round(factor * display_value) / factor;
+        } else {
+            display.innerText = 0;
+        }
+
         if (decimal && Number.isInteger(display_value)) {
             display.innerText += ".";
-        }
+        } 
     }
 }
 
 // updates display value when new number is pressed
 let update_num = (e) => {
-    let num = parseInt(e.target.id);
+    let num = parseInt(e.target.innerText);
 
     if (calc_state == states.OPERATOR) {
         // first operand done, get second
@@ -83,6 +88,7 @@ let op_buttons = Array.from(document.querySelectorAll(".op-button"));
 op_buttons.forEach((op) => {
     op.addEventListener("click", (e) => {
         if (calc_state == states.OPERANDB) {
+            // chaining calculations
             display_value = operator(operators[curr_operator], operand, display_value);
         }
         curr_operator = e.target.innerText;
@@ -118,8 +124,10 @@ decimal_button.addEventListener("click", (e) => {
 
 let equals_button = document.getElementById("equals");
 equals_button.addEventListener("click", (e) => {
-    display_value = operator(operators[curr_operator], operand, display_value);
-    calc_state = states.EVAL;
-    update_display();
+    if (calc_state == states.OPERANDB) {
+        display_value = operator(operators[curr_operator], operand, display_value);
+        calc_state = states.EVAL;
+        update_display();
+    }
 });
 
